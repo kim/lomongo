@@ -1,0 +1,8 @@
+.DS_Store
+*~
+*.swp
+lib
+lib_managed
+target
+project/boot
+TAGS
