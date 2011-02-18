@@ -264,7 +264,9 @@ object IO {
     }
 
     def write(oid: ObjectId)(buf: ChannelBuffer) {
-      buf.writeBytes(oid.bytes.take(12))
+      write(oid.time)(buf)
+      write(oid.machine)(buf)
+      write(oid.inc)(buf)
     }
 
     def cstring(s: String)(buf: ChannelBuffer) {
@@ -389,7 +391,12 @@ object IO {
         case 0x04  => Some(ArrayValue(readDocument(slice).fields.map(_.value).toList))
         case 0x10  => Some(IntValue(readInt(slice)))
         case 0x12  => Some(LongValue(readLong(slice)))
-        case 0x07  => Some(ObjectIdValue(ObjectId(slice.readBytes(12).toByteBuffer.array)))
+        case 0x07  => {
+          val time = readInt(slice)
+          val mach = readInt(slice)
+          val incr = readInt(slice)
+          Some(ObjectIdValue(ObjectId(time,mach,incr)))
+        }
         case 0x0E  => Some(SymbolValue(Symbol(readString(slice))))
         case 0x09  => Some(UTCValue(readLong(slice)))
         case 0x08  => Some(BooleanValue(slice.readByte == 1))

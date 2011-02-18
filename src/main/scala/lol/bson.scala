@@ -65,21 +65,33 @@ object Bson {
   case class MD5Value(b: Array[Byte]) extends BinaryValue(b)
   case class UserDefinedValue(b: Array[Byte]) extends BinaryValue(b)
 
-  // TODO
-  case class ObjectId(bytes: Array[Byte]) {
-    override def toString: String = {
-      "ObjectId(" + toHexString + ")"
-    }
+  case class ObjectId(time: Int, machine: Int, inc: Int)
+  object ObjectId {
 
-    def toHexString: String = {
-      val buf = new StringBuilder(24)
-      for { i <- 0 to bytes.length -1
-            x = bytes(i) & 0xFF
-            s = Integer.toHexString(x) } {
-        if (s.length == 1) buf.append("0")
-        buf.append(s)
-      }
-      buf.toString()
+    import java.net.{ NetworkInterface => Iface }
+    import java.lang.management.{ ManagementFactory => MX }
+    import java.util.concurrent.atomic.AtomicInteger
+    import java.util.Random
+    import collection.JavaConversions._
+
+    def gen(): ObjectId =
+      ObjectId(flip(curt()), machine, flip(inc.getAndIncrement()))
+
+    private lazy val machine = {
+      val ifs = Iface.getNetworkInterfaces.foldLeft("")(_ + _).hashCode << 16
+      val proc = MX.getRuntimeMXBean().getName().hashCode() & 0xFFFF
+      ifs | proc
+    }
+    private lazy val inc = new AtomicInteger(new Random().nextInt)
+
+    private def curt(): Int = (System.currentTimeMillis/1000).toInt
+    private def flip(i: Int): Int = {
+      var x: Int = 0
+      x |= ((x << 24) & 0xFF000000)
+      x |= ((x << 8)  & 0x00FF0000)
+      x |= ((x >> 8)  & 0x0000FF00)
+      x |= ((x >> 24) & 0x000000FF)
+      x
     }
   }
 
