@@ -28,6 +28,8 @@ object Bson {
   }
   object Document {
     lazy val empty = Document(Seq())
+
+    def apply(): Document = empty
   }
 
   case class Field(name: String, value: Value) {
