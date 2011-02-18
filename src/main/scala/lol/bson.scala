@@ -36,12 +36,10 @@ object Bson {
     def ::(f: Field): Document = Document(Seq(this, f))
 
     override def toString: String =
-      "(" + name + " =: " + value + ")"
+      "(" + name + " := " + value + ")"
   }
 
   abstract sealed class Value(is: Any) {
-    def =:(s: String): Field = Field(s, this)
-
     override def toString: String = Option(is) map (_.toString) getOrElse("null")
   }
   case class DoubleValue(d: Double) extends Value(d)
@@ -155,5 +153,8 @@ object Bson {
 
     implicit def field2Document(f: Field): Document = Document(Seq(f))
     implicit def fields2Document(fs: Seq[Field]): Document = Document(fs)
+
+    class FieldW(name: String) { def :=(v: Value): Field = Field(name,v) }
+    implicit def strPimp(s: String) = new FieldW(s)
   }
 }

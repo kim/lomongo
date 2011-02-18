@@ -73,7 +73,7 @@ object Mongo {
                      , skip: Int = 0
                      , limit: Int = 0) {
     def select(fs: List[String]): UserQuery = copy(s, p >>= (proj =>
-      Some(Projection(proj.p ++ fs.map(_ =: 1)))))
+      Some(Projection(proj.p ++ fs.map(_ := 1)))))
     def where(c: Document): UserQuery  = copy(s.where(c), p)
     def orderBy(o: Map[String,Boolean]): UserQuery  = copy(s.sort(o), p)
     def skip(i: Int): UserQuery = copy(s, p, i, limit)
@@ -84,24 +84,24 @@ object Mongo {
 
   case class Projection(p: Document = Document.empty)
   case class Selector(q: Document = Document.empty) {
-    def where(c: Document) = copy(("$query" =: c) :: q)
+    def where(c: Document) = copy(("$query" := c) :: q)
 
     def sort(by: Map[String,Boolean]) = {
       val orderby = by.foldLeft(Document.empty)((d,kv) => {
         val (field,asc) = kv
-        (field =: (if (asc) 1 else -1)) :: d
+        (field := (if (asc) 1 else -1)) :: d
       })
-      copy(("$orderby" =: orderby) :: q)
+      copy(("$orderby" := orderby) :: q)
     }
 
-    def returnKey = copy(("$returnKey" =: 1) :: q)
-    def maxScan(i: Int) = copy(("$maxScan" =: i) :: q)
-    def explain = copy(("$explain" =: true) :: q)
-    def snapshot = copy(("$snapshot" =: true) :: q)
-    def hint(h: Document) = copy(("$hint" =: h) :: q)
-    def min(m: Document) = copy(("$min" =: m) :: q)
-    def max(m: Document) = copy(("$max" =: m) :: q)
-    def showDiskLoc = copy(("$showDiskLoc" =: true) :: q)
+    def returnKey = copy(("$returnKey" := 1) :: q)
+    def maxScan(i: Int) = copy(("$maxScan" := i) :: q)
+    def explain = copy(("$explain" := true) :: q)
+    def snapshot = copy(("$snapshot" := true) :: q)
+    def hint(h: Document) = copy(("$hint" := h) :: q)
+    def min(m: Document) = copy(("$min" := m) :: q)
+    def max(m: Document) = copy(("$max" := m) :: q)
+    def showDiskLoc = copy(("$showDiskLoc" := true) :: q)
   }
 
   // functions on collection
@@ -181,12 +181,12 @@ object Mongo {
                   , projection: Document = Document.empty
       )(coll: Collection)(conn: Connected): Option[Document] = {
     val cmd = (
-         ("findandmodify" =: coll.name)
-      :: ("query" =: query)
-      :: ("sort" =: sort)
-      :: ("update" =: modifier)
-      :: ("new" =: returnNew)
-      :: ("fields" =: projection)
+         ("findandmodify" := coll.name)
+      :: ("query" := query)
+      :: ("sort" := sort)
+      :: ("update" := modifier)
+      :: ("new" := returnNew)
+      :: ("fields" := projection)
     )
     findAndModify(cmd, coll, conn)
   }
@@ -198,13 +198,13 @@ object Mongo {
                   , projection: Document = Document.empty
       )(coll: Collection)(conn: Connected): Option[Document] = {
     val cmd = (
-         ("findandmodify" =: coll.name)
-      :: ("query" =: query)
-      :: ("sort" =: sort)
-      :: ("update" =: modifier)
-      :: ("new" =: returnNew)
-      :: ("fields" =: projection)
-      :: ("upsert" =: true)
+         ("findandmodify" := coll.name)
+      :: ("query" := query)
+      :: ("sort" := sort)
+      :: ("update" := modifier)
+      :: ("new" := returnNew)
+      :: ("fields" := projection)
+      :: ("upsert" := true)
     )
     findAndModify(cmd, coll, conn)
   }
@@ -214,11 +214,11 @@ object Mongo {
                   , projection: Document = Document.empty
       )(coll: Collection)(conn: Connected): Document = {
     val cmd = (
-         ("findandmodify" =: coll.name)
-      :: ("query" =: query)
-      :: ("sort" =: sort)
-      :: ("fields" =: projection)
-      :: ("remove" =: true)
+         ("findandmodify" := coll.name)
+      :: ("query" := query)
+      :: ("sort" := sort)
+      :: ("fields" := projection)
+      :: ("remove" := true)
     )
     findAndModify(cmd, coll, conn).get
   }
@@ -229,9 +229,9 @@ object Mongo {
   def distinct(key: String, query: Option[Document])
               (coll: Collection)(conn: Connected): Seq[Value] = {
     val cmd = (
-         ("distinct" =: coll.name)
-      :: ("key" =: key)
-      :: ("query" =: (query | Document.empty))
+         ("distinct" := coll.name)
+      :: ("key" := key)
+      :: ("query" := (query | Document.empty))
     )
 
     command(cmd)(coll.db)(conn) map (
@@ -245,30 +245,30 @@ object Mongo {
 // def mapReduce
 
   def ensureIndex(keys: Seq[String], unique: Boolean)(coll: Collection)(conn: Connected) {
-    insert(("key" =: Document(keys map (_ =: 1)))
-        :: ("unique" =: unique)
-        :: ("name" =: keys.mkString("_"))
-        :: ("ns" =: toNamespace(coll).toString))(
+    insert(("key" := Document(keys map (_ := 1)))
+        :: ("unique" := unique)
+        :: ("name" := keys.mkString("_"))
+        :: ("ns" := toNamespace(coll).toString))(
       Collection("indexes", Database("system"))
     )(conn)
   }
 
   def dropIndex(keys: Seq[String])(coll: Collection)(conn: Connected) {
-    command(("deleteIndexes" =: coll.name)
-         :: ("index" =: keys.mkString("_")))(coll.db)(conn)
+    command(("deleteIndexes" := coll.name)
+         :: ("index" := keys.mkString("_")))(coll.db)(conn)
   }
 
   def drop(coll: Collection)(conn: Connected) {
-    command("drop" =: coll.name)(coll.db)(conn)
+    command("drop" := coll.name)(coll.db)(conn)
   }
 
   def count(query: Document, skip: Option[Int], limit: Option[Int])
            (coll: Collection)(conn: Connected): Long = {
     val cmd = (
-         ("count" =: coll.name)
-      :: ("query" =: query)
-      :: ("skip"  =: (skip | 0))
-      :: ("limit" =: (limit | 0))
+         ("count" := coll.name)
+      :: ("query" := query)
+      :: ("skip"  := (skip | 0))
+      :: ("limit" := (limit | 0))
     )
     command(cmd)(coll.db)(conn) map (
       _('n) map {
@@ -280,14 +280,14 @@ object Mongo {
 
   // database operations
   def drop(db: Database)(conn: Connected) {
-    command("dropDatabase" =: 1)(db)(conn)
+    command("dropDatabase" := 1)(db)(conn)
   }
 
   def getLastError(w: Int = 1, t: Int = 0, fsync: Boolean = false)(db: Database)(conn: Connected) =
-    command(("getlasterror" =: 1)
-         :: ("w" =: w)
-         :: ("wtimeout" =: t)
-         :: ("fsync" =: fsync))(db)(conn)
+    command(("getlasterror" := 1)
+         :: ("w" := w)
+         :: ("wtimeout" := t)
+         :: ("fsync" := fsync))(db)(conn)
 
   def command(cmd: Document)(db: Database)(conn: Connected): Option[Document] = {
     val q = Query(ns = Collection("$cmd", db)

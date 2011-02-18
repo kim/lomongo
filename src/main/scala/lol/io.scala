@@ -261,7 +261,7 @@ object IO {
       import Bson.Implicits._
 
       val d = xs.foldLeft(Document.empty)((doc,v) => {
-        (doc.fields.length.toString =: v) :: doc
+        (doc.fields.length.toString := v) :: doc
       })
       write(d)(buf)
     }
