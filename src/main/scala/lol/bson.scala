@@ -5,11 +5,14 @@ object Bson {
   import org.joda.time.{ DateTime, DateTimeZone }
   import java.util.Date
   import java.util.regex.Pattern
+  import collection.mutable.HashMap
 
 
   case class Document(fields: Seq[Field]) {
     private val fs: Map[String,Field] =
-      fields.foldLeft(Map[String,Field]())((acc,f) => acc + (f.name -> f))
+      fields.foldLeft(new HashMap[String,Field]())(
+        (acc,f) => acc += (f.name -> f)
+      ).toMap
 
     def apply(field: String): Option[Field] = fs.get(field)
     def apply(field: Symbol): Option[Field] = fs.get(field.name)
