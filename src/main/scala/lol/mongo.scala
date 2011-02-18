@@ -27,8 +27,10 @@ object Mongo {
     IO.disconnect()(conn)
   }
 
-  def run(r: Request)(c: Connected): ReplyPromise = IO.send(r)(c)
-  def run(n: Notice)(c: Connected) = IO.send(n)(c)
+  def run[T](fn: Connected => T)(implicit c: Connected) = fn(c)
+
+  private def run(r: Request)(c: Connected): ReplyPromise = IO.send(r)(c)
+  private def run(n: Notice)(c: Connected) = IO.send(n)(c)
 
 
   implicit def toNamespace(c: Collection): Namespace =
