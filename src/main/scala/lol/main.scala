@@ -6,33 +6,39 @@ import Scalaz._
 object Main {
 
   import lol.Mongo._
+  import lol.Mongo.Implicits._
   import lol.Bson._
   import lol.Bson.Implicits._
-  import lol.Protocol._
 
   def main(args: Array[String]) {
-    val conn = connect("localhost", 27017)
-    val db   = Database("foo")
-    val coll = Collection("bar", db)
+    connect("localhost", 27017) >>= (implicit conn => {
+      val db   = Database("foo")
+      val coll = Collection("bar", db)
+      val docs = Seq(
+             ("a" := "A")
+          :: ("b" := "B")
+        ,    ("a" := "A")
+          :: ("c" := List[Value]("A", "B", "C"))
+          :: ("d" := ("D" := "D")
+                  :: ("d" := "d"))
+      )
 
-    def run[T](fn: Collection => (Connected => T)): T =
-      fn(coll)(conn.get)
+      val query: Document = ("a" := "A") :: Nil
 
-    val docs = Seq(
-        ("a" =: "A") :: ("b" =: "B")
-      , ("a" =: "A") :: ("c" =: "C") :: ("d" =: "D")
-    )
+      val i = insert(docs)(coll)_
+      val q = find(query)(coll)_
+      val d = removeAll(query)(coll)_
+      val e = getLastError()(db)_
 
-    val i = insert(docs)_
-    val q = find(where(("a" =: "A") :: Nil))_
-    val d = removeAll(("a" =: "A") :: Nil)_
+      run(i)
+      run(e) map (println)
+      run(q) map (println)
+      run(d)
+      assume (run(q).docs.size == 0)
 
-    run(i)
-    run(q) map (println)
-    run(d)
-    run(q) map (println)
-
-    conn map (disconnect)
+      disconnect(conn)
+      none
+    })
   }
 }
 
