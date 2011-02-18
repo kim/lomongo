@@ -3,7 +3,9 @@ package lol
 import scalaz._
 import Scalaz._
 import org.jboss.{ netty => netty }
-import netty.{ channel => channel, buffer => buffer, handler => handler }
+import netty.{ channel => channel
+             , buffer => buffer
+             , handler => handler }
 import netty.bootstrap.ClientBootstrap
 import handler.{ codec => codec }
 import codec.frame.FrameDecoder
@@ -19,7 +21,8 @@ import channel.{ Channel
                , MessageEvent
                , ExceptionEvent }
 import channel.socket.nio.NioClientSocketChannelFactory
-import buffer.{ ChannelBuffer, ChannelBufferIndexFinder => IndexFinder }
+import buffer.{ ChannelBuffer
+              , ChannelBufferIndexFinder => IndexFinder }
 import buffer.ChannelBuffers._
 import collection.mutable.ListBuffer
 import java.util.regex.Pattern
