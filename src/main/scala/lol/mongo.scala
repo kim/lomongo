@@ -304,4 +304,8 @@ object Mongo {
 // def eval
 
   // TODO: wrappers for admin commands
+
+  object Implicits {
+    implicit def doc2UserQuery(d: Document): UserQuery = UserQuery(Selector(d))
+  }
 }
