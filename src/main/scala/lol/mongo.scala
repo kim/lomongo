@@ -283,7 +283,7 @@ object Mongo {
     command("dropDatabase" =: 1)(db)(conn)
   }
 
-  def getLastError(w: Int, t: Int, fsync: Boolean)(db: Database)(conn: Connected) =
+  def getLastError(w: Int = 1, t: Int = 0, fsync: Boolean = false)(db: Database)(conn: Connected) =
     command(("getlasterror" =: 1)
          :: ("w" =: w)
          :: ("wtimeout" =: t)
