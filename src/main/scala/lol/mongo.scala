@@ -47,25 +47,29 @@ object Mongo {
 
     def foreach[U](f: Document => U) {
       docs.foreach(f)
-      if (!docs.empty && id != 0) {
-        if (limit == 0 || (limit - offset) > 0) {
-          run(GetMore(coll, 0, id))(conn) map (reply =>
-            Cursor(reply.cursorId
-                 , coll
-                 , reply.startingFrom
-                 , limit
-                 , reply.docs
-                 , conn)) foreach (f)
-        } else {
-          run(KillCursors(Seq(id)))(conn)
-        }
-      }
+      more map (_.foreach(f))
     }
 
     def map[T](f: Document => T): Seq[T] = {
       val buf = ListBuffer[T]()
       foreach(d => buf += f(d))
       List() ++ buf
+    }
+
+    lazy val more: Option[Cursor] = {
+      if (!docs.empty && id != 0) {
+        if (limit == 0 || (limit - offset) > 0) {
+          run(GetMore(coll, 0, id))(conn) map (reply =>
+            Some(copy(id     = reply.cursorId
+                    , offset = reply.startingFrom
+                    , docs   = reply.docs)))
+        } else {
+          run(KillCursors(Seq(id)))(conn)
+          None
+        }
+      } else {
+        None
+      }
     }
   }
 
