@@ -3,27 +3,23 @@ package lol
 import scalaz._
 import Scalaz._
 import org.jboss.{ netty => netty }
-import netty.{ channel => channel
-             , buffer => buffer
-             , handler => handler }
 import netty.bootstrap.ClientBootstrap
-import handler.{ codec => codec }
-import codec.frame.FrameDecoder
-import codec.oneone.OneToOneEncoder
-import channel.{ Channel
-               , Channels
-               , ChannelHandlerContext
-               , ChannelFuture
-               , ChannelPipeline
-               , ChannelPipelineFactory
-               , SimpleChannelHandler
-               , ChannelEvent
-               , MessageEvent
-               , ExceptionEvent }
-import channel.socket.nio.NioClientSocketChannelFactory
-import buffer.{ ChannelBuffer
-              , ChannelBufferIndexFinder => IndexFinder }
-import buffer.ChannelBuffers._
+import netty.handler.codec.frame.FrameDecoder
+import netty.handler.codec.oneone.OneToOneEncoder
+import netty.channel.{ Channel
+                     , Channels
+                     , ChannelHandlerContext
+                     , ChannelFuture
+                     , ChannelPipeline
+                     , ChannelPipelineFactory
+                     , SimpleChannelHandler
+                     , ChannelEvent
+                     , MessageEvent
+                     , ExceptionEvent }
+import netty.channel.socket.nio.NioClientSocketChannelFactory
+import netty.buffer.{ ChannelBuffer
+                    , ChannelBufferIndexFinder => IndexFinder }
+import netty.buffer.ChannelBuffers._
 import collection.mutable.ListBuffer
 import java.util.regex.Pattern
 import java.util.concurrent.{ Executors
@@ -41,18 +37,15 @@ object IO {
 
   case class Connected(channel: Channel, bootstrap: ClientBootstrap)
   case class ReplyPromise(private val queue: SynchronousQueue[Reply]) {
-    private var reply: Option[Reply] = None
-    def get: Reply = reply | { reply = Some(queue.take); get }
+    def get: Reply = queue.take
     def map[B](fn: Reply => B): B = fn(get)
   }
 
   def send(n: Notice)(c: Connected) {
-    println("send: " + n)
     c.channel.write(n).awaitUninterruptibly
   }
 
   def send(r: Request)(c: Connected): ReplyPromise = {
-    println("send: " + r)
     val h = c.channel.getPipeline.getLast.asInstanceOf[ClientHandler]
     val q = h.expect(r.requestId)
     c.channel.write(r).awaitUninterruptibly
