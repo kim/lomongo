@@ -14,7 +14,7 @@ object Main {
     val db   = Database("foo")
     val coll = Collection("bar", db)
     val docs = Seq(
-         ("a" := "A")
+           ("a" := "A")
         :: ("b" := "B")
       ,    ("a" := "A")
         :: ("c" := List[Value]("A", "B", "C"))
