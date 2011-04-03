@@ -143,11 +143,6 @@ object Mongo {
 
 
   // write operations
-  // NOTE: leaking abstraction of "safe mode" omitted, use something like
-  //
-  // insert(...) andThen getLastError(...)
-  //
-  // instead
 
   def insert(docs: Seq[Document])(coll: Collection)(conn: Connected) {
     run(Insert(coll, docs))(conn)

@@ -321,7 +321,7 @@ object IO {
 
     override def decode(ctx: ChannelHandlerContext, ch: Channel, buf: ChannelBuffer): Object = {
       if (buf.readableBytes < 4) {
-        println("not enough data")
+        //println("not enough data")
         return null
       }
 
@@ -330,7 +330,7 @@ object IO {
       buf.resetReaderIndex
 
       if (buf.readableBytes < length) {
-        println("frame incomplete (" + length + ":" + buf.readableBytes + ")")
+        //println("frame incomplete (" + length + ":" + buf.readableBytes + ")")
         return null
       }
 
@@ -411,7 +411,7 @@ object IO {
         case 0x0D  => Some(JavaScriptValue(readString(slice)))
         case 0x05  => Some(readBinaryValue(slice))
         case _ => {
-          println("unknown magic: " + magic)
+          //println("unknown magic: " + magic)
           None
         }
       }

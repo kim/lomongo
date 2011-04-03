@@ -32,6 +32,10 @@ welcome.
 * some of the administrative commands have no wrappers yet
 * map/reduce is not implemented at all
 * BSON encoding/decoding should be decoupled from Netty `Channel`s
+  * compare performance / GC characteristics of:
+    * Stream (including forcing / wrapping in Channel)
+    * Array of nested 'word' Arrays wrapped in Channel
+    * NIO ByteBuffer (including allocating more capacity)
 * the interface follows the native API very closely -- a 'funny characters' API,
   possibly exposing 'Collection'-semantics, could be nice
 
