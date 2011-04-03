@@ -37,19 +37,20 @@ object IO {
 
   case class Connected(channel: Channel, bootstrap: ClientBootstrap)
   case class ReplyPromise(private val queue: SynchronousQueue[Reply]) {
+    def get(timeout: Int): Option[Reply] =
+      Option(queue.poll(timeout, TimeUnit.SECONDS))
     def get: Reply = queue.take
     def map[B](fn: Reply => B): B = fn(get)
   }
 
-  def send(n: Notice)(c: Connected) {
-    c.channel.write(n).awaitUninterruptibly
-  }
+  def send(n: Notice)(c: Connected): ChannelFuture =
+    c.channel.write(n)
 
   def send(r: Request)(c: Connected): ReplyPromise = {
-    val h = c.channel.getPipeline.getLast.asInstanceOf[ClientHandler]
-    val q = h.expect(r.requestId)
-    c.channel.write(r).awaitUninterruptibly
-    ReplyPromise(q)
+    c.channel.write(r)
+    ReplyPromise(
+      c.channel.getPipeline.getLast.asInstanceOf[ClientHandler]
+       .expect(r.requestId))
   }
 
   def disconnect()(c: Connected) {
