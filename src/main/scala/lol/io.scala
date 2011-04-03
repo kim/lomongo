@@ -86,20 +86,17 @@ object IO {
 
     import Protocol._
 
-    private val replies = new ConcurrentHashMap[Int,SynchronousQueue[Reply]]()
+    private val replies = new ConcurrentHashMap[Int,SynchronousQueue[Reply]]
 
-    def expect(requestId: Int): SynchronousQueue[Reply] = {
-      val q = new SynchronousQueue[Reply]()
-      Option(replies.putIfAbsent(requestId, q)) | q
-    }
+    def expect(requestId: Int): SynchronousQueue[Reply] =
+      Option(
+        replies.putIfAbsent(requestId, new SynchronousQueue[Reply])
+      ) | replies.get(requestId)
 
     override def messageReceived(ctx: ChannelHandlerContext, e: MessageEvent) {
       e.getMessage match {
-        case r:Reply => {
-          Option(replies.get(r.header.responseTo)) map (_.offer(r))
-          replies.remove(r.header.responseTo)
-        }
-        case _ => ()
+        case r:Reply =>
+          Option(replies.remove(r.header.responseTo)) map (_ offer(r))
       }
       super.messageReceived(ctx, e)
     }
