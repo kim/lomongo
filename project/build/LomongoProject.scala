@@ -7,7 +7,7 @@ class LomongoProject(info: ProjectInfo) extends DefaultProject(info) {
   )
 
   override def libraryDependencies = Set(
-      "com.googlecode.scalaz" %% "scalaz-core" % "5.0"
+      "com.googlecode.scalaz" % "scalaz-core_2.8.0" % "5.0"
     , "org.jboss.netty" % "netty" % "3.2.2.Final"
     , "joda-time" % "joda-time" % "1.6.1"
     , "commons-codec" % "commons-codec" % "1.4"

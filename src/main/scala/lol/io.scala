@@ -20,13 +20,11 @@ import netty.channel.socket.nio.NioClientSocketChannelFactory
 import netty.buffer.{ ChannelBuffer
                     , ChannelBufferIndexFinder => IndexFinder }
 import netty.buffer.ChannelBuffers._
-import collection.mutable.ListBuffer
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.SyncVar
 import java.util.regex.Pattern
 import java.util.concurrent.{ Executors
-                            , ConcurrentHashMap
-                            , SynchronousQueue
-                            , Future
-                            , TimeUnit }
+                            , ConcurrentHashMap }
 import java.net.InetSocketAddress
 
 
@@ -36,10 +34,9 @@ object IO {
 
 
   case class Connected(channel: Channel, bootstrap: ClientBootstrap)
-  case class ReplyPromise(private val queue: SynchronousQueue[Reply]) {
-    def get(timeout: Int): Option[Reply] =
-      Option(queue.poll(timeout, TimeUnit.SECONDS))
-    def get: Reply = queue.take
+  case class ReplyPromise(private val svar: SyncVar[Reply]) {
+    def get(timeout: Long): Option[Reply] = svar.get(timeout)
+    def get: Reply = svar.get
     def map[B](fn: Reply => B): B = fn(get)
   }
 
@@ -87,17 +84,17 @@ object IO {
 
     import Protocol._
 
-    private val replies = new ConcurrentHashMap[Int,SynchronousQueue[Reply]]
+    private val replies = new ConcurrentHashMap[Int,SyncVar[Reply]]
 
-    def expect(requestId: Int): SynchronousQueue[Reply] =
+    def expect(requestId: Int): SyncVar[Reply] =
       Option(
-        replies.putIfAbsent(requestId, new SynchronousQueue[Reply])
+        replies.putIfAbsent(requestId, new SyncVar[Reply])
       ) | replies.get(requestId)
 
     override def messageReceived(ctx: ChannelHandlerContext, e: MessageEvent) {
       e.getMessage match {
         case r:Reply =>
-          Option(replies.remove(r.header.responseTo)) map (_ offer(r))
+          Option(replies.remove(r.header.responseTo)) map (_ put(r))
       }
       super.messageReceived(ctx, e)
     }
